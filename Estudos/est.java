@@ -53,3 +53,31 @@ public class Estoque {
         }
     }
 }
+public class JwtFiltroAutenticacao extends OncePerRequestFilter {
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
+        String token = extrairToken(request);
+        if (token != null && validarToken(token)) {
+            String email = obterEmailDoToken(token);
+            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(email, null, new ArrayList<>());
+            SecurityContextHolder.getContext().setAuthentication(auth);
+        }
+        filterChain.doFilter(request, response);
+    }
+    // métodos auxiliares para extrair, validar e obter dados do token
+}
+Esse filtro é registrado na configuração de segurança do Spring:
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.csrf().disable()
+            .authorizeRequests()
+            .antMatchers("/api/login").permitAll()
+            .anyRequest().authenticated()
+            .and()
+ .addFilterBefore(new JwtFiltroAutenticacao(), UsernamePasswordAuthenticationFilter.class);
+    }
+}
