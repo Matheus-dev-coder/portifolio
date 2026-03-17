@@ -53,6 +53,7 @@ public class Estoque {
         }
     }
 }
+
 public class JwtFiltroAutenticacao extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -68,6 +69,7 @@ public class JwtFiltroAutenticacao extends OncePerRequestFilter {
     }
     // métodos auxiliares para extrair, validar e obter dados do token
 }
+
 Esse filtro é registrado na configuração de segurança do Spring:
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
@@ -79,5 +81,67 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .anyRequest().authenticated()
             .and()
  .addFilterBefore(new JwtFiltroAutenticacao(), UsernamePasswordAuthenticationFilter.class);
+    }
+}
+
+@Entity
+public class Produto {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+/** ID gerado automaticamente pelo banco de dados.
+ * O GenerationType.IDENTITY informa ao JPA que o próprio banco de dados será responsável
+ * por atribuir um valor único ao ID, geralmente através de auto-incremento.
+ */
+    private Long id;
+    private String nome;
+    private Double preco;
+}
+
+@Repository
+public interface ProdutoRepository extends JpaRepository<Produto, Long> {
+}
+
+@Service
+public class ProdutoService {
+
+    @Autowired
+    private ProdutoRepository produtoRepository;
+
+    public Produto salvarProduto(Produto produto) {
+        // Exemplo de lógica de negócio: validação simples
+        if (produto.getPreco() <= 0) {
+            throw new IllegalArgumentException("O preço do produto deve ser maior que zero.");
+        }
+
+        // Exemplo adicional: cálculo de imposto antes de salvar
+        double imposto = produto.getPreco() * 0.1; // 10% de imposto
+        produto.setPreco(produto.getPreco() + imposto);
+
+        return produtoRepository.save(produto);
+    }
+
+    public List<Produto> listarProdutos() {
+        return produtoRepository.findAll();
+    }
+}
+
+@RestController
+@RequestMapping("/produtos")
+public class ProdutoController {
+
+    private final ProdutoService service;
+
+    public ProdutoController(ProdutoService service) {
+        this.service = service;
+    }
+
+    @GetMapping
+    public List<Produto> listar() {
+        return service.listarTodos();
+    }
+
+    @PostMapping
+    public Produto criar(@RequestBody Produto produto) {
+        return service.salvar(produto);
     }
 }
