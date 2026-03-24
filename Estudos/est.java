@@ -145,3 +145,19 @@ public class ProdutoController {
         return service.salvar(produto);
     }
 }
+//salvar usuairio
+@SpringBootTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
+public class UsuarioServiceIT {
+    @Autowired
+    private UsuarioService usuarioService;
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+    @Test
+    public void deveSalvarUsuarioNoBancoEmMemoria() {
+        Usuario usuario = new Usuario("Ana", "ana@email.com");
+        usuarioService.salvar(usuario);
+        Optional encontrado = usuarioRepository.findByEmail("ana@email.com");
+        assertTrue(encontrado.isPresent());
+    }
+}
